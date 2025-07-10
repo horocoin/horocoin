@@ -1487,11 +1487,11 @@ const GasManager = ({ currentAccount, suiClient, t }) => {
   const MIN_GAS_BALANCE = 50_000_000;
 
   const checkGasBalance = async () => {
-    if (!!!currentAccount || !currentAccount?.address) return;
+    if (!currentAccount || !currentAccount.address) return;
     
     try {
       const balance = await suiClient.getBalance({
-        owner: currentAccount?.address,
+        owner: currentAccount.address,
         coinType: '0x2::sui::SUI'
       });
       
@@ -1505,7 +1505,7 @@ const GasManager = ({ currentAccount, suiClient, t }) => {
   };
 
   const requestTestnetGas = async () => {
-    if (!currentAccount?.address || isRequestingGas) return;
+    if (!currentAccount.address || isRequestingGas) return;
     
     setIsRequestingGas(true);
     
@@ -1513,7 +1513,7 @@ const GasManager = ({ currentAccount, suiClient, t }) => {
       const faucetUrl = `https://faucet.testnet.sui.io/`;
       window.open(faucetUrl, '_blank');
       
-      alert(`🚰 Testnet Faucet opened in new tab!\n\n📋 Your address: ${currentAccount?.address}\n\n1. Please paste your address in the faucet\n2. Please click "Request SUI"\n3. Please come back here and try again\n\n(This takes ~30 seconds)`);
+      alert(`🚰 Testnet Faucet opened in new tab!\n\n📋 Your address: ${currentAccount.address}\n\n1. Please paste your address in the faucet\n2. Please click "Request SUI"\n3. Please come back here and try again\n\n(This takes ~30 seconds)`);
       
       setTimeout(() => {
         checkGasBalance();
@@ -1533,15 +1533,15 @@ const GasManager = ({ currentAccount, suiClient, t }) => {
   };
 
   React.useEffect(() => {
-    if (!!currentAccount && currentAccount?.address) {
+    if (currentAccount && currentAccount.address) {
       checkGasBalance();
     } else {
       setGasBalance(null);
       setGasStatus('checking');
     }
-  }, [!!currentAccount, currentAccount?.address]);
+  }, [currentAccount, currentAccount?.address]);
 
-  if (!!!currentAccount) return null;
+  if (!currentAccount) return null;
 
   return (
     <div className="space-y-2">
@@ -1749,7 +1749,10 @@ const CHINESE_ZODIAC_SIGNS = [
   { name: 'pig', symbol: '🐖'}
 ];
 
-// Custom Connect Button Component
+// Detect mobile
+const isMobile = typeof navigator !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+// Custom Connect Button Component with deep linking for Suiet on mobile
 const CustomConnectButton = ({ t }) => {
   const currentAccount = useCurrentAccount();
   const { connectionStatus } = useCurrentWallet();
@@ -1761,6 +1764,17 @@ const CustomConnectButton = ({ t }) => {
           {t('connected')}: {currentAccount.address.slice(0, 6)}...{currentAccount.address.slice(-4)}
         </div>
       </div>
+    );
+  }
+
+  if (isMobile) {
+    return (
+      <button 
+        onClick={() => window.location.href = `suiet://wallet/connect?dappUrl=${encodeURIComponent(window.location.origin)}`}
+        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
+      >
+        {t('connectWalletButton')}
+      </button>
     );
   }
 
@@ -1956,7 +1970,7 @@ function HoroApp() {
 
   // Check blockchain claim status using SUI time with optional silent mode
   const checkBlockchainClaimStatus = async (silent = false) => {
-    if (!!!currentAccount || !currentAccount?.address) {
+    if (!currentAccount || !currentAccount.address) {
       setBlockchainClaimStatus('checking');
       return;
     }
@@ -1969,7 +1983,7 @@ function HoroApp() {
       // Always get fresh SUI time to ensure we have current data
       const currentSuiTime = await getSuiTime(suiClient);
       
-      console.log('🔍 Checking blockchain claim status for:', currentAccount?.address);
+      console.log('🔍 Checking blockchain claim status for:', currentAccount.address);
       console.log('🔍 Using SUI day of week:', currentSuiTime.dayOfWeek);
       
       const result = await suiClient.devInspectTransactionBlock({
@@ -1980,12 +1994,12 @@ function HoroApp() {
             arguments: [
               txb.object(CLAIMS_ID),
               txb.object('0x6'), // Sui Clock object
-              txb.pure.address(currentAccount?.address)
+              txb.pure.address(currentAccount.address)
             ]
           });
           return txb;
         })(),
-        sender: currentAccount?.address,
+        sender: currentAccount.address,
       });
 
       console.log('🔍 Has claimed today result:', result);
@@ -2074,7 +2088,7 @@ function HoroApp() {
       // Always get fresh SUI time to ensure we have current data
       const currentSuiTime = await getSuiTime(suiClient);
       
-      console.log('📊 Loading weekly progress from blockchain for:', currentAccount?.address);
+      console.log('📊 Loading weekly progress from blockchain for:', currentAccount.address);
       console.log('📊 SUI day of week:', currentSuiTime.dayOfWeek);
       console.log('📊 SUI current day:', currentSuiTime.currentDay);
       
@@ -2085,13 +2099,13 @@ function HoroApp() {
             target: `${PACKAGE_ID}::horo::get_weekly_progress`,
             arguments: [
               txb.object(PROGRESS_REGISTRY_ID),
-              txb.pure.address(currentAccount?.address),
+              txb.pure.address(currentAccount.address),
               txb.object('0x6'), // Clock
             ]
           });
           return txb;
         })(),
-        sender: currentAccount?.address,
+        sender: currentAccount.address,
       });
       
       console.log('📊 Blockchain progress query result:', result);
@@ -2347,13 +2361,13 @@ function HoroApp() {
       setSelectedSign(savedSign);
       setSelectedSystem(savedSystem);
     }
-  }, [!!currentAccount, language]);
+  }, [currentAccount, language]);
 
   // Initialize SUI time and then check claim status, plus periodic status checking
   useEffect(() => {
     let statusCheckInterval;
     
-    if (!!currentAccount && currentAccount?.address && selectedSign) {
+    if (currentAccount && currentAccount.address && selectedSign) {
       // Get SUI time first, then check status and load progress
       getSuiTime(suiClient).then((currentSuiTime) => {
         console.log('🕒 SUI time initialized:', currentSuiTime);
@@ -2387,10 +2401,10 @@ function HoroApp() {
         clearInterval(statusCheckInterval);
       }
     };
-  }, [!!currentAccount, currentAccount?.address, selectedSign]);
+  }, [currentAccount, currentAccount?.address, selectedSign]);
   
   useEffect(() => {
-    if (!!currentAccount) {
+    if (currentAccount) {
       updateTodaysClaimAmount();
     }
   }, [blockchainClaimStatus, weeklyProgressByDay, suiTimeData]);
@@ -2596,7 +2610,7 @@ function HoroApp() {
     localStorage.setItem(`horoWeekSign_${weekStart}`, sign);
     
     // Get SUI time and load progress after selecting sign
-    if (!!currentAccount) {
+    if (currentAccount) {
       try {
         const currentSuiTime = await getSuiTime(suiClient);
         console.log('🕒 SUI time loaded after sign selection:', currentSuiTime);
@@ -2650,12 +2664,12 @@ function HoroApp() {
 
           <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 py-12">
             <div className="text-center mb-8">
-              <h1 className="text-6xl font-bold text-white mb-4 tracking-wider" style={{
+              <h1 className="text-4xl sm:text-6xl font-bold text-white mb-4 tracking-wider" style={{
                 textShadow: '3px 3px 0px rgba(0,0,0,0.3), 6px 6px 0px rgba(0,0,0,0.1)'
               }}>
                 {t('dailyHoro')}
               </h1>
-              <p className="text-2xl text-yellow-200 font-semibold">
+              <p className="text-xl sm:text-2xl text-yellow-200 font-semibold">
                 {t('chooseZodiacSystem')}
               </p>
             </div>
@@ -2686,7 +2700,7 @@ function HoroApp() {
                 <Sparkles className="h-6 w-6 text-yellow-300 animate-pulse" style={{animationDelay: '0.6s'}} />
               </div>
               
-              <div className="flex space-x-6 text-yellow-200 justify-center">
+              <div className="flex flex-wrap justify-center gap-4 sm:gap-6 text-yellow-200">
                 <button 
                   onClick={() => setShowAbout(true)}
                   className="hover:text-white transition-colors text-sm font-medium cursor-pointer"
@@ -2729,7 +2743,7 @@ function HoroApp() {
           onClick={() => setShowAbout(false)}
         >
           <div 
-            className="bg-gray-900 rounded-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto border border-gray-600"
+            className="bg-gray-900 rounded-xl w-full sm:max-w-2xl max-h-[80vh] overflow-y-auto border border-gray-600"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="sticky top-0 bg-gray-900 p-6 border-b border-gray-600 flex items-center justify-between">
@@ -2787,7 +2801,7 @@ function HoroApp() {
           onClick={() => setShowTokenomics(false)}
         >
           <div 
-            className="bg-gray-900 rounded-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto border border-gray-600"
+            className="bg-gray-900 rounded-xl w-full sm:max-w-2xl max-h-[80vh] overflow-y-auto border border-gray-600"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="sticky top-0 bg-gray-900 p-6 border-b border-gray-600 flex items-center justify-between">
@@ -2843,7 +2857,7 @@ function HoroApp() {
           onClick={() => setShowHelp(false)}
         >
           <div 
-            className="bg-gray-900 rounded-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto border border-gray-600"
+            className="bg-gray-900 rounded-xl w-full sm:max-w-2xl max-h-[80vh] overflow-y-auto border border-gray-600"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="sticky top-0 bg-gray-900 p-6 border-b border-gray-600 flex items-center justify-between">
@@ -2907,18 +2921,18 @@ function HoroApp() {
 
           <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 py-12">
             <div className="text-center mb-8">
-              <h1 className="text-6xl font-bold text-white mb-4 tracking-wider" style={{
+              <h1 className="text-4xl sm:text-6xl font-bold text-white mb-4 tracking-wider" style={{
                 textShadow: '3px 3px 0px rgba(0,0,0,0.3), 6px 6px 0px rgba(0,0,0,0.1)'
               }}>
                 {t('dailyHoro')}
               </h1>
-              <p className="text-2xl text-yellow-200 font-semibold">
+              <p className="text-xl sm:text-2xl text-yellow-200 font-semibold">
                 {selectedSystem === 'western' ? t('chooseWesternZodiac') : t('chooseChineseZodiac')}
               </p>
             </div>
 
             <div className="max-w-md w-full space-y-6">
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                 {(selectedSystem === 'western' ? ZODIAC_SIGNS : CHINESE_ZODIAC_SIGNS).map(sign => (
                   <button
                     key={sign.name}
@@ -2942,7 +2956,7 @@ function HoroApp() {
                 <Sparkles className="h-6 w-6 text-yellow-300 animate-pulse" style={{animationDelay: '0.6s'}} />
               </div>
               
-              <div className="flex space-x-6 text-yellow-200 justify-center">
+              <div className="flex flex-wrap justify-center gap-4 sm:gap-6 text-yellow-200">
                 <button 
                   onClick={() => setShowAbout(true)}
                   className="hover:text-white transition-colors text-sm font-medium cursor-pointer"
@@ -2986,7 +3000,7 @@ function HoroApp() {
             onClick={() => setShowAbout(false)}
           >
             <div 
-              className="bg-gray-900 rounded-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto border border-gray-600"
+              className="bg-gray-900 rounded-xl w-full sm:max-w-2xl max-h-[80vh] overflow-y-auto border border-gray-600"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="sticky top-0 bg-gray-900 p-6 border-b border-gray-600 flex items-center justify-between">
@@ -3044,7 +3058,7 @@ function HoroApp() {
             onClick={() => setShowTokenomics(false)}
           >
             <div 
-              className="bg-gray-900 rounded-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto border border-gray-600"
+              className="bg-gray-900 rounded-xl w-full sm:max-w-2xl max-h-[80vh] overflow-y-auto border border-gray-600"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="sticky top-0 bg-gray-900 p-6 border-b border-gray-600 flex items-center justify-between">
@@ -3100,7 +3114,7 @@ function HoroApp() {
             onClick={() => setShowHelp(false)}
           >
             <div 
-              className="bg-gray-900 rounded-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto border border-gray-600"
+              className="bg-gray-900 rounded-xl w-full sm:max-w-2xl max-h-[80vh] overflow-y-auto border border-gray-600"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="sticky top-0 bg-gray-900 p-6 border-b border-gray-600 flex items-center justify-between">
@@ -3144,7 +3158,7 @@ function HoroApp() {
           <div className="text-center mb-8">
             <div className="flex items-center justify-center mb-4">
               <Star className="h-12 w-12 text-yellow-400 mr-3" />
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">
+              <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">
                 {t('dailyHoro')}
               </h1>
             </div>
@@ -3174,26 +3188,26 @@ function HoroApp() {
             </div>
 
             {/* Today's horoscope */}
-            <div className="bg-gray-800 rounded-xl p-8">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold capitalize">{t(selectedSign)} {t('dailyReading')} {getZodiacSymbol()}</h2>
-                <h2 className="text-2xl">{formatCurrentDate()}</h2>
+            <div className="bg-gray-800 rounded-xl p-4 sm:p-8">
+              <div className="flex flex-col sm:flex-row items-center justify-between mb-6">
+                <h2 className="text-xl sm:text-2xl font-bold capitalize">{t(selectedSign)} {t('dailyReading')} {getZodiacSymbol()}</h2>
+                <h2 className="text-xl sm:text-2xl">{formatCurrentDate()}</h2>
               </div>
               
               <div className="space-y-6">
-                <p className="text-xl leading-relaxed text-gray-100">
+                <p className="text-base sm:text-xl leading-relaxed text-gray-100">
                   {getCurrentHoroscope()}
                 </p>
               </div>
             </div>
 
             {/* Wallet connection prompt */}
-            {!!!currentAccount && (
-              <div className="bg-blue-900/30 rounded-xl p-8 border border-blue-400/30 text-center">
+            {!currentAccount && (
+              <div className="bg-blue-900/30 rounded-xl p-4 sm:p-8 border border-blue-400/30 text-center">
                 <div className="space-y-4">
                   <div className="text-4xl">💧</div>
-                  <h3 className="text-xl font-bold text-blue-300">Connect Your Wallet</h3>
-                  <p className="text-blue-300">
+                  <h3 className="text-lg sm:text-xl font-bold text-blue-300">Connect Your Wallet</h3>
+                  <p className="text-blue-300 text-sm sm:text-base">
                     {t('connectSuietPrompt')}
                   </p>
                   <div className="flex justify-center">
@@ -3208,12 +3222,12 @@ function HoroApp() {
             )}
 
             {/* Progress indicator with proper blockchain data representation */}
-            {!!currentAccount && (
-              <div className="bg-gray-800 rounded-xl p-6">
+            {currentAccount && (
+              <div className="bg-gray-800 rounded-xl p-4 sm:p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-bold">{t('weeklyProgress')}</h2>
+                  <h2 className="text-lg sm:text-xl font-bold">{t('weeklyProgress')}</h2>
                   <div className="text-right">
-                    <p className="text-2xl font-bold text-yellow-400">{getCurrentDayOfWeek() + 1}/7</p>
+                    <p className="text-xl sm:text-2xl font-bold text-yellow-400">{getCurrentDayOfWeek() + 1}/7</p>
                   </div>
                 </div>
                 
@@ -3299,7 +3313,7 @@ function HoroApp() {
                 </div>
                 
                 {/* Progress Legend */}
-                <div className="flex justify-center space-x-4 text-xs mb-4">
+                <div className="flex flex-wrap justify-center gap-2 sm:gap-4 text-xs mb-4">
                   <div className="flex items-center space-x-1">
                     <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                     <span className="text-green-400">{t('completed')}</span>
@@ -3319,7 +3333,7 @@ function HoroApp() {
                 </div>
                 
                 {/* Claim status UI */}
-                {!!currentAccount && signAndExecuteTransaction ? (
+                {currentAccount && signAndExecuteTransaction ? (
                   <div className="mt-2 space-y-2">
                     {(() => {
                       const hasAlreadyClaimed = isTodayCompleted();
@@ -3381,7 +3395,7 @@ function HoroApp() {
                       }
                     })()}
                   </div>
-                ) : !!currentAccount ? (
+                ) : currentAccount ? (
                   <p className="text-red-400 text-sm mt-2">
                     {t('useSuietForSigning')}
                   </p>
@@ -3390,7 +3404,7 @@ function HoroApp() {
                 {currentAccount?.address && (
                   <div className="mt-3 space-y-2">
                     <p className="text-gray-400 text-xs">
-                      {t('wallet')}: {currentAccount?.address.slice(0, 8)}...{currentAccount?.address.slice(-6)}
+                      {t('wallet')}: {currentAccount.address.slice(0, 8)}...{currentAccount.address.slice(-6)}
                     </p>
                     <GasManager currentAccount={currentAccount} suiClient={suiClient} t={t} />
                   </div>
@@ -3400,7 +3414,7 @@ function HoroApp() {
           </div>
           
           <div className="text-center mt-12 mb-8">
-            <div className="flex justify-center space-x-6 text-gray-400">
+            <div className="flex flex-wrap justify-center gap-4 sm:gap-6 text-gray-400">
               <button 
                 onClick={() => setShowAbout(true)}
                 className="hover:text-yellow-400 transition-colors text-sm font-medium cursor-pointer"
@@ -3453,7 +3467,7 @@ function HoroApp() {
           onClick={() => setShowAbout(false)}
         >
           <div 
-            className="bg-gray-900 rounded-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto border border-gray-600"
+            className="bg-gray-900 rounded-xl w-full sm:max-w-2xl max-h-[80vh] overflow-y-auto border border-gray-600"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="sticky top-0 bg-gray-900 p-6 border-b border-gray-600 flex items-center justify-between">
@@ -3511,7 +3525,7 @@ function HoroApp() {
           onClick={() => setShowTokenomics(false)}
         >
           <div 
-            className="bg-gray-900 rounded-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto border border-gray-600"
+            className="bg-gray-900 rounded-xl w-full sm:max-w-2xl max-h-[80vh] overflow-y-auto border border-gray-600"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="sticky top-0 bg-gray-900 p-6 border-b border-gray-600 flex items-center justify-between">
@@ -3567,7 +3581,7 @@ function HoroApp() {
           onClick={() => setShowHelp(false)}
         >
           <div 
-            className="bg-gray-900 rounded-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto border border-gray-600"
+            className="bg-gray-900 rounded-xl w-full sm:max-w-2xl max-h-[80vh] overflow-y-auto border border-gray-600"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="sticky top-0 bg-gray-900 p-6 border-b border-gray-600 flex items-center justify-between">
