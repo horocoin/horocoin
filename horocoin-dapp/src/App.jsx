@@ -43,7 +43,7 @@ const LANGUAGES = {
   en: { name: 'English', flag: '🇺🇸' },
   es: { name: 'Español', flag: '🇨🇴' },
   zh: { name: '中文', flag: '🇨🇳' },
-  'zh-TR': { name: '繁體中文', flag: '🇨🇳' },
+  'zh-TR': { name: '繁體中文', flag: '🇹🇼' },
   ru: { name: 'Русский', flag: '🇷🇺' },
   fr: { name: 'Français', flag: '🇫🇷' },
   pt: { name: 'Português', flag: '🇧🇷' } 
